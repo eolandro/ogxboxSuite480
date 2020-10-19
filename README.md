@@ -1,4 +1,4 @@
-# ogxboxSuite480. Port of Suite240p for ogxbox
+# OGXboxSuite480. Port of Suite240p for ogxbox
 
 i don't know what i'm doing
 
@@ -37,3 +37,12 @@ This port is based in suite240p SDL version for Dreamcast. Only the following pa
 
 And help does not help.
 
+## Cool People
+===============================================================================
+OGXboxSuite480 share files with Suite240p. 
+
+* Main menu graphics: Asher
+* Extra patterns and collaboration: Konsolkongen & shmups regulars
+* Original Code: Artemio Urbina
+
+Thanks so much!
