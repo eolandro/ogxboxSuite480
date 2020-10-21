@@ -25,6 +25,21 @@ $(GEN_XISO): $(OUTPUT_DIR)/601701cb.bmp
 $(OUTPUT_DIR)/601701cb.bmp: $(CURDIR)/601701cb.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
+TARGET += $(OUTPUT_DIR)/circles.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/circles.bmp
+$(OUTPUT_DIR)/circles.bmp: $(CURDIR)/circles.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/circles_grid.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/circles_grid.bmp
+$(OUTPUT_DIR)/circles_grid.bmp: $(CURDIR)/circles_grid.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/circles_griddot.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/circles_griddot.bmp
+$(OUTPUT_DIR)/circles_griddot.bmp: $(CURDIR)/circles_griddot.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
 TARGET += $(OUTPUT_DIR)/DejaVuSerif.ttf
 $(GEN_XISO): $(OUTPUT_DIR)/DejaVuSerif.ttf
 $(OUTPUT_DIR)/DejaVuSerif.ttf: $(CURDIR)/DejaVuSerif.ttf $(OUTPUT_DIR)

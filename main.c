@@ -30,7 +30,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 // Menu entrys
-#define ME 4
+#define ME 5
 
 // La idea es realizar este programa como una maquina de estados
 // The core of this software is a simple state machine
@@ -48,6 +48,7 @@ void init();				 // estado 0
 void grid();				 // estado 1
 void colorbars();			 // estado 2
 void draw601colorbars();	 // estado 3
+void drawlinearity();		 // estado 4
 // general
 void printSDLErrorAndReboot();
 void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g, unsigned char b);
@@ -69,6 +70,10 @@ SDL_Texture		*txtgridbmp = NULL;
 SDL_Texture		*txtcolorbmp = NULL;
 // for colorbars grey	
 SDL_Texture		*txt601701cbbmp = NULL;
+// for linearity
+SDL_Texture		*txtcirclesbmp = NULL;
+SDL_Texture		*txtcircles_gridbmp = NULL;
+SDL_Texture		*txtcircles_griddotbmp = NULL;
 
 // test value
 int test = 0;
@@ -81,8 +86,12 @@ char Menu[ME][32] = {
 	"Grid Test",
 	"Color Bars",
 	"Color Bars with Gray Scale",
+	"Linearity",
 	"Help"
 };
+// for linearity
+unsigned char gType = 0; // 0 No grid, 1 Grid , 2 Grid dot
+
 // controller
 struct CTRLER {
 	unsigned char UP;
@@ -107,14 +116,14 @@ int main(void){
 	
 	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER) != 0) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL video.\n");
-		printSDLErrorAndReboot(110);
+		printSDLErrorAndReboot(119);
     }
 	
 	
 	if(TTF_Init() < 0) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init: %s\n", TTF_GetError());
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(117);
+		printSDLErrorAndReboot(126);
 	}
 	
 	font = TTF_OpenFont("D:\\DejaVuSerif.ttf", 20);
@@ -123,7 +132,7 @@ int main(void){
 	if(!font) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_OpenFont: %s\n", TTF_GetError());
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(126);
+		printSDLErrorAndReboot(135);
 	}
 	
 	FontH = TTF_FontHeight(font);
@@ -131,7 +140,7 @@ int main(void){
 	if (SDL_NumJoysticks() <= 0){
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Joystick Error.\n");
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(134);
+		printSDLErrorAndReboot(143);
 	}
 	
 	SDL_GameController *sgc = SDL_GameControllerOpen(0);
@@ -139,7 +148,7 @@ int main(void){
 	if (sgc  == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Joystick Error.\n");
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(142);
+		printSDLErrorAndReboot(151);
 	}
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 	driver = SDL_GetCurrentVideoDriver();
@@ -155,7 +164,7 @@ int main(void){
 	{
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window could not be created!.\n");
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(158);
+		printSDLErrorAndReboot(168);
 	}
 
 	/* Create the renderer */
@@ -163,7 +172,7 @@ int main(void){
 	if (!renderer) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create renderer.\n");
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(166);
+		printSDLErrorAndReboot(175);
 	}
 
 	/* Clear the window*/
@@ -184,6 +193,9 @@ int main(void){
 			break;
 			case 3:
 				draw601colorbars();
+			break;
+			case 4:
+				drawlinearity();
 			break;
 			default:
 				estado = 0;
@@ -261,7 +273,7 @@ void init(){
 		titlebmp = SDL_LoadBMP("D:\\title.bmp");
 		if (titlebmp == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(264);
+			printSDLErrorAndReboot(276);
 		}
 		///////////////////////////////////////
 		/* Create textures from the image */
@@ -269,7 +281,7 @@ void init(){
 		if (txtitlebmp == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
 			SDL_FreeSurface(titlebmp);
-			printSDLErrorAndReboot(272);
+			printSDLErrorAndReboot(284);
 		}
 		SDL_FreeSurface(titlebmp);
 	}
@@ -308,7 +320,7 @@ void grid(){
 		gridbmp = SDL_LoadBMP("D:\\grid.bmp");
 		if (gridbmp == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(302);
+			printSDLErrorAndReboot(323);
 		}
 		///////////////////////////////////////
 		/* Create textures from the image */
@@ -316,7 +328,7 @@ void grid(){
 		if (txtgridbmp == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
 			SDL_FreeSurface(gridbmp);
-			printSDLErrorAndReboot(310);
+			printSDLErrorAndReboot(331);
 		}
 		SDL_FreeSurface(gridbmp);
 	}
@@ -343,15 +355,15 @@ void colorbars(){
 		colorb = SDL_LoadBMP("D:\\color.bmp");
 		if (colorb == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(337);
+			printSDLErrorAndReboot(358);
 		}
 		///////////////////////////////////////
 		/* Create textures from the image */
 		txtcolorbmp = SDL_CreateTextureFromSurface(renderer, colorb);
-		if (txtgridbmp == NULL) {
+		if (txtcolorbmp == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
 			SDL_FreeSurface(colorb);
-			printSDLErrorAndReboot(345);
+			printSDLErrorAndReboot(366);
 		}
 		SDL_FreeSurface(colorb);
 	}
@@ -378,7 +390,7 @@ void draw601colorbars(){
 		d601color = SDL_LoadBMP("D:\\601701cb.bmp");
 		if (d601color == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(379);
+			printSDLErrorAndReboot(393);
 		}
 		///////////////////////////////////////
 		/* Create textures from the image */
@@ -386,7 +398,7 @@ void draw601colorbars(){
 		if (txt601701cbbmp == NULL) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
 			SDL_FreeSurface(d601color);
-			printSDLErrorAndReboot(380);
+			printSDLErrorAndReboot(401);
 		}
 		SDL_FreeSurface(d601color);
 	}
@@ -402,6 +414,103 @@ void draw601colorbars(){
 	if(mctr.B > 0){
 		mctr.B = 0;
 		estado = 0;
+	}
+}
+
+void drawlinearity(){
+	//Render clear
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+	SDL_RenderClear(renderer);
+	
+	// load textures
+	if (txtcirclesbmp == NULL){
+		// This only 
+		SDL_Surface *circl = NULL;
+		///////////////////////////////////////
+		circl = SDL_LoadBMP("D:\\circles.bmp");
+		if (circl == NULL) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
+			printSDLErrorAndReboot(433);
+		}
+		/////////////////////////////////////// need alpha
+		SDL_SetColorKey(circl, SDL_TRUE, SDL_MapRGB(circl->format, 0, 0, 0)); 
+		
+		///////////////////////////////////////
+		/* Create textures from the image */
+		txtcirclesbmp = SDL_CreateTextureFromSurface(renderer, circl);
+		if (txtcirclesbmp == NULL) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
+			SDL_FreeSurface(circl);
+			printSDLErrorAndReboot(444);
+		}
+		SDL_FreeSurface(circl);
+	}
+	
+	if (txtcircles_gridbmp == NULL){
+		// This only 
+		SDL_Surface *gcircl = NULL;
+		///////////////////////////////////////
+		gcircl = SDL_LoadBMP("D:\\circles_grid.bmp");
+		if (gcircl == NULL) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
+			printSDLErrorAndReboot(456);
+		}
+		///////////////////////////////////////
+		/* Create textures from the image */
+		txtcircles_gridbmp = SDL_CreateTextureFromSurface(renderer, gcircl);
+		if (txtcircles_gridbmp == NULL) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
+			SDL_FreeSurface(gcircl);
+			printSDLErrorAndReboot(464);
+		}
+		SDL_FreeSurface(gcircl);
+	}
+	
+	if (txtcircles_griddotbmp == NULL){
+		// This only 
+		SDL_Surface *gdcircl = NULL;
+		///////////////////////////////////////
+		gdcircl = SDL_LoadBMP("D:\\circles_griddot.bmp");
+		if (gdcircl == NULL) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
+			printSDLErrorAndReboot(476);
+		}
+		///////////////////////////////////////
+		/* Create textures from the image */
+		txtcircles_griddotbmp = SDL_CreateTextureFromSurface(renderer, gdcircl);
+		if (txtcircles_griddotbmp == NULL) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
+			SDL_FreeSurface(gdcircl);
+			printSDLErrorAndReboot(484);
+		}
+		SDL_FreeSurface(gdcircl);
+	}
+	///////////////////////////
+	///////////////////////////
+	// gamepad controller in this state
+	// gamepad controller to change state
+	if(mctr.Y > 0){
+		mctr.Y = 0;
+		gType = gType < 2? gType + 1 : 0 ;
+	}
+	////////////////////////////////////
+	// Textures
+	switch(gType){
+		case 1:
+			SDL_RenderCopy(renderer, txtcircles_gridbmp, NULL, NULL);
+		break;
+		case 2:
+			SDL_RenderCopy(renderer, txtcircles_griddotbmp, NULL, NULL);
+		break;
+	}
+	SDL_RenderCopy(renderer, txtcirclesbmp, NULL, NULL);
+	////////////////////////
+	SDL_RenderPresent(renderer);
+	// gamepad controller to change state
+	if(mctr.B > 0){
+		mctr.B = 0;
+		estado = 0;
+		gType  = 0;
 	}
 }
 

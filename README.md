@@ -22,6 +22,7 @@ Sorry for my awful english and instructions
 * Navigate through menu using UP and DOWN.
 * A Button for ok.
 * B Button for return Menu.
+* Y Button apply/change pattern
 * BACK Button for exit.
 
 ## Original Software
@@ -34,6 +35,7 @@ This port is based in suite240p SDL version for Dreamcast. Only the following pa
 * Grid
 * Color Bars
 * Color Bars with Gray Scale
+* Linearity
 
 And help does not help.
 
