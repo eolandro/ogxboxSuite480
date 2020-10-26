@@ -40,6 +40,26 @@ $(GEN_XISO): $(OUTPUT_DIR)/circles_griddot.bmp
 $(OUTPUT_DIR)/circles_griddot.bmp: $(CURDIR)/circles_griddot.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
+TARGET += $(OUTPUT_DIR)/motoko.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/motoko.bmp
+$(OUTPUT_DIR)/motoko.bmp: $(CURDIR)/motoko.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/checkpos.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/checkpos.bmp
+$(OUTPUT_DIR)/checkpos.bmp: $(CURDIR)/checkpos.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/stripespos.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/stripespos.bmp
+$(OUTPUT_DIR)/stripespos.bmp: $(CURDIR)/stripespos.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/shadow.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/shadow.bmp
+$(OUTPUT_DIR)/shadow.bmp: $(CURDIR)/shadow.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
 TARGET += $(OUTPUT_DIR)/DejaVuSerif.ttf
 $(GEN_XISO): $(OUTPUT_DIR)/DejaVuSerif.ttf
 $(OUTPUT_DIR)/DejaVuSerif.ttf: $(CURDIR)/DejaVuSerif.ttf $(OUTPUT_DIR)

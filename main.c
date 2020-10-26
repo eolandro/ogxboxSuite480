@@ -26,12 +26,12 @@
 #include <hal/video.h>
 #include <windows.h>
 #include "stdio.h"
+#include "stdlib.h"
 #include "string.h"
 #include <SDL.h>
 #include <SDL_ttf.h>
 // Menu entrys
-#define ME 5
-
+#define ME 6
 // La idea es realizar este programa como una maquina de estados
 // The core of this software is a simple state machine
 
@@ -49,9 +49,12 @@ void grid();				 // estado 1
 void colorbars();			 // estado 2
 void draw601colorbars();	 // estado 3
 void drawlinearity();		 // estado 4
+void dropshadow();			 // estado 5
 // general
 void printSDLErrorAndReboot();
 void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g, unsigned char b);
+SDL_Texture* loadTexture(const char * text, int linecode);
+SDL_Texture* loadTextureA(const char * text, unsigned char r,unsigned char g, unsigned char b, int linecode);
 // SDL and screen things
 const extern int SCREEN_WIDTH;
 const extern int SCREEN_HEIGHT;
@@ -74,9 +77,12 @@ SDL_Texture		*txt601701cbbmp = NULL;
 SDL_Texture		*txtcirclesbmp = NULL;
 SDL_Texture		*txtcircles_gridbmp = NULL;
 SDL_Texture		*txtcircles_griddotbmp = NULL;
+// for dropshadow
+SDL_Texture		*txtmotokobmp = NULL;
+SDL_Texture		*txtcheckposbmp = NULL;
+SDL_Texture		*txtstripesposbmp = NULL;
+SDL_Texture		*txtshadowbmp = NULL;
 
-// test value
-int test = 0;
 //  Window and font
 int	W = 640, H = 480;
 int FontH = 0;
@@ -87,12 +93,19 @@ char Menu[ME][32] = {
 	"Color Bars",
 	"Color Bars with Gray Scale",
 	"Linearity",
+	"DropShadow",
 	"Help"
 };
-// for linearity
+// for linearity and drop shadow
 unsigned char gType = 0; // 0 No grid, 1 Grid , 2 Grid dot
+// for framecontrol dropshadow and others
+unsigned char frame = 0;
+SDL_Rect shadowdest = {320,240,64,64};
 
 // controller
+SDL_GameController *sgc;
+// joy threshold
+short JTHR = 50;
 struct CTRLER {
 	unsigned char UP;
 	unsigned char DOWN;
@@ -143,7 +156,7 @@ int main(void){
 		printSDLErrorAndReboot(143);
 	}
 	
-	SDL_GameController *sgc = SDL_GameControllerOpen(0);
+	sgc = SDL_GameControllerOpen(0);
 	
 	if (sgc  == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Joystick Error.\n");
@@ -197,6 +210,9 @@ int main(void){
 			case 4:
 				drawlinearity();
 			break;
+			case 5:
+				dropshadow();
+			break;
 			default:
 				estado = 0;
 			break;
@@ -210,7 +226,7 @@ int main(void){
 				break;
 				case SDL_CONTROLLERBUTTONDOWN:
 					// check if detects gamecontroller
-					test = 1;
+					
 					if (event.cbutton.button == SDL_CONTROLLER_BUTTON_BACK){
 						estado = 99;
 					}else if (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_UP){
@@ -233,6 +249,7 @@ int main(void){
 			}
 		}
 		//////////////////////////////////////////
+		frame = !frame;
 	}
 	TTF_CloseFont(font);
 	
@@ -314,23 +331,7 @@ void init(){
 
 void grid(){
 	if (txtgridbmp == NULL){
-		// This only 
-		SDL_Surface *gridbmp = NULL;
-		///////////////////////////////////////
-		gridbmp = SDL_LoadBMP("D:\\grid.bmp");
-		if (gridbmp == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(323);
-		}
-		///////////////////////////////////////
-		/* Create textures from the image */
-		txtgridbmp = SDL_CreateTextureFromSurface(renderer, gridbmp);
-		if (txtgridbmp == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
-			SDL_FreeSurface(gridbmp);
-			printSDLErrorAndReboot(331);
-		}
-		SDL_FreeSurface(gridbmp);
+		txtgridbmp = loadTexture("D:\\grid.bmp",318);
 	}
 	
 	SDL_RenderCopy(renderer, txtgridbmp, NULL, NULL);
@@ -488,7 +489,6 @@ void drawlinearity(){
 	///////////////////////////
 	///////////////////////////
 	// gamepad controller in this state
-	// gamepad controller to change state
 	if(mctr.Y > 0){
 		mctr.Y = 0;
 		gType = gType < 2? gType + 1 : 0 ;
@@ -514,6 +514,98 @@ void drawlinearity(){
 	}
 }
 
+
+void dropshadow(){
+	SDL_Texture	*txtbg = NULL;
+	short ndeltaX = 0, ndeltaY = 0;
+	if (txtmotokobmp == NULL){
+		txtmotokobmp = loadTexture("D:\\motoko.bmp",513);
+	}
+	if (txtcheckposbmp == NULL){
+		txtcheckposbmp = loadTexture("D:\\checkpos.bmp",516);
+	}
+	if (txtstripesposbmp == NULL){
+		txtstripesposbmp = loadTexture("D:\\stripespos.bmp",520);
+	}
+	if (txtshadowbmp == NULL){
+		txtshadowbmp = loadTextureA("D:\\shadow.bmp",255,0,255,524);
+	}
+	
+	///////////////////////////
+	///////////////////////////
+	// gamepad controller in this state
+	if(mctr.Y > 0){
+		mctr.Y = 0;
+		gType = gType < 2? gType + 1 : 0 ;
+	}
+	if(mctr.X > 0){
+		mctr.X = 0;
+		JTHR = JTHR > 1000 ? JTHR + 50 : 50 ;
+	}
+	////////////////////////////////////
+	// Textures
+	switch(gType){
+		case 0:
+			txtbg = txtmotokobmp;
+		break;
+		case 1:
+			txtbg = txtcheckposbmp;
+		break;
+		case 2:
+			txtbg = txtstripesposbmp;
+		break;
+	}	
+	
+	SDL_RenderCopy(renderer, txtbg, NULL, NULL);
+	if (frame){
+		SDL_RenderCopy(renderer, txtshadowbmp, NULL, &shadowdest);
+	}
+	////////////////////////
+	SDL_RenderPresent(renderer);
+	/////////////////////////////////
+	ndeltaX = SDL_GameControllerGetAxis(sgc,SDL_CONTROLLER_AXIS_RIGHTX);
+	ndeltaY = SDL_GameControllerGetAxis(sgc,SDL_CONTROLLER_AXIS_RIGHTY);
+	
+	
+	// move shadow next frame
+	if (ndeltaX > 0){ // right
+		
+		if (ndeltaX > JTHR){
+			shadowdest.x++;
+		}
+		
+	}else if (ndeltaX < 0){ // left
+		
+		if (abs(ndeltaX) > JTHR){
+			shadowdest.x--;
+		}
+	}
+
+
+	if (ndeltaY > 0){ // down
+		
+		if (ndeltaY > JTHR){
+			shadowdest.y++;
+		}
+	}else if (ndeltaY < 0){ // up
+		
+		if (abs(ndeltaY) > JTHR){
+			shadowdest.y--;
+		}
+	}
+	
+	// gamepad controller to change state
+	if(mctr.B > 0){
+		mctr.B = 0;
+		estado = 0;
+		gType = 0;
+	}
+}
+
+
+
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 static void printSDLErrorAndReboot(int line){
     debugPrint("SDL_Error: %s\n", SDL_GetError());
     debugPrint("Line: %d\n", line);
@@ -537,4 +629,50 @@ void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g,
 	destrect.h = h;
 	SDL_RenderCopy(renderer, texture, NULL, &destrect);
 	SDL_DestroyTexture(texture);
+}
+
+SDL_Texture* loadTexture(const char * text, int linecode){
+	SDL_Texture *txt = NULL;
+	// This only 
+	SDL_Surface *sfbmp = NULL;
+	///////////////////////////////////////
+	sfbmp = SDL_LoadBMP(text);
+	if (sfbmp == NULL) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
+		printSDLErrorAndReboot(linecode);
+	}
+	///////////////////////////////////////
+	/* Create textures from the image */
+	txt = SDL_CreateTextureFromSurface(renderer, sfbmp);
+	if (txt == NULL) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
+		SDL_FreeSurface(sfbmp);
+		printSDLErrorAndReboot(linecode);
+	}
+	SDL_FreeSurface(sfbmp);
+	return txt;
+}
+
+SDL_Texture* loadTextureA(const char * text, unsigned char r,unsigned char g, unsigned char b, int linecode){
+	SDL_Texture *txt = NULL;
+	// This only 
+	SDL_Surface *sfbmp = NULL;
+	///////////////////////////////////////
+	sfbmp = SDL_LoadBMP(text);
+	if (sfbmp == NULL) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
+		printSDLErrorAndReboot(linecode);
+	}
+	///////////////////////////////////////
+	SDL_SetColorKey(sfbmp, SDL_TRUE, SDL_MapRGB(sfbmp->format, r, g, b)); 
+	///////////////////////////////////////////////
+	/* Create textures from the image */
+	txt = SDL_CreateTextureFromSurface(renderer, sfbmp);
+	if (txt == NULL) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
+		SDL_FreeSurface(sfbmp);
+		printSDLErrorAndReboot(linecode);
+	}
+	SDL_FreeSurface(sfbmp);
+	return txt;
 }
