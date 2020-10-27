@@ -60,6 +60,11 @@ $(GEN_XISO): $(OUTPUT_DIR)/shadow.bmp
 $(OUTPUT_DIR)/shadow.bmp: $(CURDIR)/shadow.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
+TARGET += $(OUTPUT_DIR)/striped.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/striped.bmp
+$(OUTPUT_DIR)/striped.bmp: $(CURDIR)/striped.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
 TARGET += $(OUTPUT_DIR)/DejaVuSerif.ttf
 $(GEN_XISO): $(OUTPUT_DIR)/DejaVuSerif.ttf
 $(OUTPUT_DIR)/DejaVuSerif.ttf: $(CURDIR)/DejaVuSerif.ttf $(OUTPUT_DIR)

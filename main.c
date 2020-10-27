@@ -31,7 +31,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 // Menu entrys
-#define ME 6
+#define ME 7
 // La idea es realizar este programa como una maquina de estados
 // The core of this software is a simple state machine
 
@@ -50,6 +50,7 @@ void colorbars();			 // estado 2
 void draw601colorbars();	 // estado 3
 void drawlinearity();		 // estado 4
 void dropshadow();			 // estado 5
+void stripedsprite();		 // estado 6
 // general
 void printSDLErrorAndReboot();
 void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g, unsigned char b);
@@ -82,6 +83,8 @@ SDL_Texture		*txtmotokobmp = NULL;
 SDL_Texture		*txtcheckposbmp = NULL;
 SDL_Texture		*txtstripesposbmp = NULL;
 SDL_Texture		*txtshadowbmp = NULL;
+// for striped
+SDL_Texture		*txtstripedbmp = NULL;
 
 //  Window and font
 int	W = 640, H = 480;
@@ -93,7 +96,8 @@ char Menu[ME][32] = {
 	"Color Bars",
 	"Color Bars with Gray Scale",
 	"Linearity",
-	"DropShadow",
+	"Drop Shadow",
+	"Striped Sprite",
 	"Help"
 };
 // for linearity and drop shadow
@@ -212,6 +216,9 @@ int main(void){
 			break;
 			case 5:
 				dropshadow();
+			break;
+			case 6:
+				stripedsprite();
 			break;
 			default:
 				estado = 0;
@@ -514,7 +521,8 @@ void drawlinearity(){
 	}
 }
 
-
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 void dropshadow(){
 	SDL_Texture	*txtbg = NULL;
 	short ndeltaX = 0, ndeltaY = 0;
@@ -540,7 +548,7 @@ void dropshadow(){
 	}
 	if(mctr.X > 0){
 		mctr.X = 0;
-		JTHR = JTHR > 1000 ? JTHR + 50 : 50 ;
+		JTHR = JTHR > 10000 ? JTHR + 100 : 1000 ;
 	}
 	////////////////////////////////////
 	// Textures
@@ -559,6 +567,94 @@ void dropshadow(){
 	SDL_RenderCopy(renderer, txtbg, NULL, NULL);
 	if (frame){
 		SDL_RenderCopy(renderer, txtshadowbmp, NULL, &shadowdest);
+	}
+	////////////////////////
+	SDL_RenderPresent(renderer);
+	/////////////////////////////////
+	ndeltaX = SDL_GameControllerGetAxis(sgc,SDL_CONTROLLER_AXIS_RIGHTX);
+	ndeltaY = SDL_GameControllerGetAxis(sgc,SDL_CONTROLLER_AXIS_RIGHTY);
+	
+	
+	// move shadow next frame
+	if (ndeltaX > 0){ // right
+		
+		if (ndeltaX > JTHR){
+			shadowdest.x++;
+		}
+		
+	}else if (ndeltaX < 0){ // left
+		
+		if (abs(ndeltaX) > JTHR){
+			shadowdest.x--;
+		}
+	}
+
+
+	if (ndeltaY > 0){ // down
+		
+		if (ndeltaY > JTHR){
+			shadowdest.y++;
+		}
+	}else if (ndeltaY < 0){ // up
+		
+		if (abs(ndeltaY) > JTHR){
+			shadowdest.y--;
+		}
+	}
+	
+	// gamepad controller to change state
+	if(mctr.B > 0){
+		mctr.B = 0;
+		estado = 0;
+		gType = 0;
+	}
+}
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void stripedsprite(){
+	SDL_Texture	*txtbg = NULL;
+	short ndeltaX = 0, ndeltaY = 0;
+	if (txtmotokobmp == NULL){
+		txtmotokobmp = loadTexture("D:\\motoko.bmp",513);
+	}
+	if (txtcheckposbmp == NULL){
+		txtcheckposbmp = loadTexture("D:\\checkpos.bmp",516);
+	}
+	if (txtstripesposbmp == NULL){
+		txtstripesposbmp = loadTexture("D:\\stripespos.bmp",520);
+	}
+	if (txtstripedbmp == NULL){
+		txtstripedbmp = loadTextureA("D:\\striped.bmp",255,0,255,524);
+	}
+	
+	///////////////////////////
+	///////////////////////////
+	// gamepad controller in this state
+	if(mctr.Y > 0){
+		mctr.Y = 0;
+		gType = gType < 2? gType + 1 : 0 ;
+	}
+	if(mctr.X > 0){
+		mctr.X = 0;
+		JTHR = JTHR > 10000 ? JTHR + 100 : 1000 ;
+	}
+	////////////////////////////////////
+	// Textures
+	switch(gType){
+		case 0:
+			txtbg = txtmotokobmp;
+		break;
+		case 1:
+			txtbg = txtcheckposbmp;
+		break;
+		case 2:
+			txtbg = txtstripesposbmp;
+		break;
+	}	
+	
+	SDL_RenderCopy(renderer, txtbg, NULL, NULL);
+	if (frame){
+		SDL_RenderCopy(renderer, txtstripedbmp, NULL, &shadowdest);
 	}
 	////////////////////////
 	SDL_RenderPresent(renderer);
