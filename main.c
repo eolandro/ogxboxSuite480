@@ -31,7 +31,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 // Menu entrys
-#define ME 7
+#define ME 8
 // La idea es realizar este programa como una maquina de estados
 // The core of this software is a simple state machine
 
@@ -51,6 +51,7 @@ void draw601colorbars();	 // estado 3
 void drawlinearity();		 // estado 4
 void dropshadow();			 // estado 5
 void stripedsprite();		 // estado 6
+void manuallag();			 // estado 7
 // general
 void printSDLErrorAndReboot();
 void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g, unsigned char b);
@@ -85,6 +86,9 @@ SDL_Texture		*txtstripesposbmp = NULL;
 SDL_Texture		*txtshadowbmp = NULL;
 // for striped
 SDL_Texture		*txtstripedbmp = NULL;
+// for manual lag
+SDL_Texture		*txtlagperbmp = NULL;
+SDL_Texture		*txtlagfullbmp = NULL;
 
 //  Window and font
 int	W = 640, H = 480;
@@ -98,6 +102,7 @@ char Menu[ME][32] = {
 	"Linearity",
 	"Drop Shadow",
 	"Striped Sprite",
+	"Manual Lag",
 	"Help"
 };
 // for linearity and drop shadow
@@ -105,6 +110,9 @@ unsigned char gType = 0; // 0 No grid, 1 Grid , 2 Grid dot
 // for framecontrol dropshadow and others
 unsigned char frame = 0;
 SDL_Rect shadowdest = {320,240,64,64};
+// for manual test
+SDL_Rect centerlagt = {288,208,64,64};
+SDL_Rect movinglagt = {288, 80,64,64}; // 336
 
 // controller
 SDL_GameController *sgc;
@@ -193,7 +201,7 @@ int main(void){
 	}
 
 	/* Clear the window*/
-	SDL_SetRenderDrawColor(renderer, 0xA0, 0xA0, 0xA0, 0xFF);
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 	SDL_RenderClear(renderer);
 	
 	while (estado != 99){
@@ -219,6 +227,9 @@ int main(void){
 			break;
 			case 6:
 				stripedsprite();
+			break;
+			case 7:
+				manuallag();
 			break;
 			default:
 				estado = 0;
@@ -272,6 +283,36 @@ int main(void){
 	if (txt601701cbbmp != NULL){
 		SDL_DestroyTexture(txt601701cbbmp);
 	}
+	if (txtcirclesbmp != NULL){
+		SDL_DestroyTexture(txtcirclesbmp);
+	}
+	if (txtcircles_gridbmp != NULL){
+		SDL_DestroyTexture(txtcircles_gridbmp);
+	}
+	if (txtcircles_griddotbmp != NULL){
+		SDL_DestroyTexture(txtcircles_griddotbmp);
+	}
+	if (txtmotokobmp != NULL){
+		SDL_DestroyTexture(txtmotokobmp);
+	}
+	if (txtcheckposbmp != NULL){
+		SDL_DestroyTexture(txtcheckposbmp);
+	}
+	if (txtstripesposbmp != NULL){
+		SDL_DestroyTexture(txtstripesposbmp);
+	}
+	if (txtshadowbmp != NULL){
+		SDL_DestroyTexture(txtshadowbmp);
+	}
+	if (txtstripedbmp != NULL){
+		SDL_DestroyTexture(txtstripedbmp);
+	}
+	if (txtlagperbmp != NULL){
+		SDL_DestroyTexture(txtlagperbmp);
+	}
+	if (txtlagfullbmp != NULL){
+		SDL_DestroyTexture(txtlagfullbmp);
+	}
 	
 	SDL_DestroyWindow(window);
 	SDL_GameControllerClose(0);
@@ -291,23 +332,7 @@ void init(){
 	///////////////////////////
 	
 	if (txtitlebmp == NULL){
-		// This only 
-		SDL_Surface *titlebmp = NULL;
-		///////////////////////////////////////
-		titlebmp = SDL_LoadBMP("D:\\title.bmp");
-		if (titlebmp == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(276);
-		}
-		///////////////////////////////////////
-		/* Create textures from the image */
-		txtitlebmp = SDL_CreateTextureFromSurface(renderer, titlebmp);
-		if (txtitlebmp == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
-			SDL_FreeSurface(titlebmp);
-			printSDLErrorAndReboot(284);
-		}
-		SDL_FreeSurface(titlebmp);
+		txtitlebmp = loadTexture("D:\\title.bmp",295);
 	}
 	
 	SDL_RenderCopy(renderer, txtitlebmp, NULL, NULL);
@@ -427,7 +452,7 @@ void draw601colorbars(){
 
 void drawlinearity(){
 	//Render clear
-	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+	//SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 	SDL_RenderClear(renderer);
 	
 	// load textures
@@ -698,7 +723,67 @@ void stripedsprite(){
 	}
 }
 
-
+void manuallag(){
+	short ntriggerval = 0;
+	char buffer[10];
+	// If updown or downup
+	if (movinglagt.y > 336 ){
+		gType = 1;
+	}
+	if (movinglagt.y < 80 ){
+		gType = 0;
+	}
+	
+	//Render clear
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+	SDL_RenderClear(renderer);
+	
+	
+	if (txtlagperbmp == NULL){
+		txtlagperbmp = loadTextureA("D:\\lag-per.bmp",0,0,0,705);
+	}
+	if (txtlagfullbmp == NULL){
+		txtlagfullbmp = loadTexture("D:\\lag-full.bmp",708);
+	}
+	///////////////////////////
+	///////////////////////////
+	// gamepad controller in this state
+	
+	// gamepad direct
+	ntriggerval = SDL_GameControllerGetAxis(sgc,SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+	sprintf (buffer,"%u",ntriggerval);
+	
+	go2XYprint(25,20,buffer,255,255,255);
+	
+	SDL_RenderCopy(renderer, txtlagperbmp, NULL,  &movinglagt);
+	if (movinglagt.y != centerlagt.y){
+		SDL_RenderCopy(renderer, txtlagperbmp, NULL,  &centerlagt);
+	}else{
+		//This only when collide
+		SDL_RenderCopy(renderer, txtlagfullbmp, NULL, &centerlagt);
+	}
+	
+		
+	////////////////////////
+	SDL_RenderPresent(renderer);
+	/////////////////////////////////
+	// we work fordward
+	
+	if (gType == 0){ // up2down
+		movinglagt.y += 2;
+	}
+	if (gType == 1){ // down2up
+		movinglagt.y -= 2;
+	}
+	
+	// gamepad controller to change state
+	if(mctr.B > 0){
+		mctr.B = 0;
+		estado = 0;
+		gType = 0;
+		movinglagt.y = 80;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
