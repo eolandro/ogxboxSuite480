@@ -1,3 +1,5 @@
+CFLAGS += -Wall -Wextra -pedantic -O2
+
 XBE_TITLE = suite480p
 GEN_XISO = $(XBE_TITLE).iso
 SRCS = $(CURDIR)/main.c
@@ -10,9 +12,14 @@ $(GEN_XISO): $(OUTPUT_DIR)/title.bmp
 $(OUTPUT_DIR)/title.bmp: $(CURDIR)/title.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
-TARGET += $(OUTPUT_DIR)/grid.bmp
-$(GEN_XISO): $(OUTPUT_DIR)/grid.bmp
-$(OUTPUT_DIR)/grid.bmp: $(CURDIR)/grid.bmp $(OUTPUT_DIR)
+TARGET += $(OUTPUT_DIR)/gridfullrgb.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/gridfullrgb.bmp
+$(OUTPUT_DIR)/gridfullrgb.bmp: $(CURDIR)/gridfullrgb.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/gridlimitedrgb.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/gridlimitedrgb.bmp
+$(OUTPUT_DIR)/gridlimitedrgb.bmp: $(CURDIR)/gridlimitedrgb.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
 TARGET += $(OUTPUT_DIR)/color.bmp

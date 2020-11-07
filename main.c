@@ -30,6 +30,7 @@
 #include "string.h"
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <SDL_image.h>
 // Menu entrys
 #define ME 8
 // La idea es realizar este programa como una maquina de estados
@@ -53,13 +54,13 @@ void dropshadow();			 // estado 5
 void stripedsprite();		 // estado 6
 void manuallag();			 // estado 7
 // general
-void printSDLErrorAndReboot();
+static void printSDLErrorAndReboot();
 void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g, unsigned char b);
-SDL_Texture* loadTexture(const char * text, int linecode);
-SDL_Texture* loadTextureA(const char * text, unsigned char r,unsigned char g, unsigned char b, int linecode);
+SDL_Texture* loadTexture(const char * text,unsigned char type, int linecode);
+SDL_Texture* loadTextureA(const char * text,unsigned char type, unsigned char r,unsigned char g, unsigned char b, int linecode);
 // SDL and screen things
-const extern int SCREEN_WIDTH;
-const extern int SCREEN_HEIGHT;
+//static const int SCREEN_WIDTH = 640;
+//static const int SCREEN_HEIGHT = 480;
 const char		*driver;
 SDL_Window		*window;
 SDL_Event		event;
@@ -70,7 +71,8 @@ SDL_Surface		*text_sf;
 // for title
 SDL_Texture		*txtitlebmp = NULL;
 // for grid		
-SDL_Texture		*txtgridbmp = NULL;
+SDL_Texture		*txtgridFRGBbmp = NULL;
+SDL_Texture		*txtgridLRGBbmp = NULL;
 // for colorbars	
 SDL_Texture		*txtcolorbmp = NULL;
 // for colorbars grey	
@@ -90,7 +92,7 @@ SDL_Texture		*txtstripedbmp = NULL;
 SDL_Texture		*txtlagperbmp = NULL;
 SDL_Texture		*txtlagfullbmp = NULL;
 
-//  Window and font
+//  font
 int	W = 640, H = 480;
 int FontH = 0;
 // Menu
@@ -141,14 +143,20 @@ int main(void){
 	
 	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER) != 0) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL video.\n");
-		printSDLErrorAndReboot(119);
+		printSDLErrorAndReboot(145);
     }
+	
+	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't intialize SDL_image.\n");
+		SDL_VideoQuit();
+		printSDLErrorAndReboot(151);
+	}
 	
 	
 	if(TTF_Init() < 0) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init: %s\n", TTF_GetError());
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(126);
+		printSDLErrorAndReboot(158);
 	}
 	
 	font = TTF_OpenFont("D:\\DejaVuSerif.ttf", 20);
@@ -157,7 +165,7 @@ int main(void){
 	if(!font) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_OpenFont: %s\n", TTF_GetError());
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(135);
+		printSDLErrorAndReboot(168);
 	}
 	
 	FontH = TTF_FontHeight(font);
@@ -165,15 +173,15 @@ int main(void){
 	if (SDL_NumJoysticks() <= 0){
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Joystick Error.\n");
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(143);
+		printSDLErrorAndReboot(176);
 	}
 	
 	sgc = SDL_GameControllerOpen(0);
 	
-	if (sgc  == NULL) {
+	if (sgc == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Joystick Error.\n");
 		SDL_VideoQuit();
-		printSDLErrorAndReboot(151);
+		printSDLErrorAndReboot(184);
 	}
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 	driver = SDL_GetCurrentVideoDriver();
@@ -181,7 +189,7 @@ int main(void){
 	window = SDL_CreateWindow("Suite480p",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
-		SCREEN_WIDTH, SCREEN_HEIGHT,
+		W, H,
 		SDL_WINDOW_SHOWN
 	);
 	
@@ -274,8 +282,11 @@ int main(void){
 	if (txtitlebmp != NULL){
 		SDL_DestroyTexture(txtitlebmp);
 	}
-	if (txtgridbmp != NULL){
-		SDL_DestroyTexture(txtgridbmp);
+	if (txtgridLRGBbmp != NULL){
+		SDL_DestroyTexture(txtgridLRGBbmp);
+	}
+	if (txtgridFRGBbmp != NULL){
+		SDL_DestroyTexture(txtgridFRGBbmp);
 	}
 	if (txtcolorbmp != NULL){
 		SDL_DestroyTexture(txtcolorbmp);
@@ -332,7 +343,7 @@ void init(){
 	///////////////////////////
 	
 	if (txtitlebmp == NULL){
-		txtitlebmp = loadTexture("D:\\title.bmp",295);
+		txtitlebmp = loadTexture("D:\\title.bmp",'b',346);
 	}
 	
 	SDL_RenderCopy(renderer, txtitlebmp, NULL, NULL);
@@ -362,45 +373,44 @@ void init(){
 }
 
 void grid(){
-	if (txtgridbmp == NULL){
-		txtgridbmp = loadTexture("D:\\grid.bmp",318);
+	SDL_Texture	*txtbg = NULL;
+	SDL_Rect rpos = {0,0,W,H};
+	if (txtgridFRGBbmp == NULL){
+		txtgridFRGBbmp = loadTexture("D:\\gridfullrgb.bmp",'b',377);
 	}
-	
-	SDL_RenderCopy(renderer, txtgridbmp, NULL, NULL);
-	///////////////////////////
+	if (txtgridLRGBbmp == NULL){
+		txtgridLRGBbmp = loadTexture("D:\\gridlimitedrgb.bmp",'b',380);
+	}
 	///////////////////////////
 	// gamepad controller in this state
-	
+	if(mctr.Y > 0){
+		mctr.Y = 0;
+		gType = gType < 1? gType + 1 : 0 ;
+	}
+	////////////////////////////////////
+	// Textures
+	if(gType == 0){
+		txtbg = txtgridLRGBbmp;
+	}else{
+		txtbg = txtgridFRGBbmp;
+	}
+	/////////////////////////////////////
+	SDL_RenderCopy(renderer, txtbg, NULL, &rpos);
 	////////////////////////
 	SDL_RenderPresent(renderer);
 	// gamepad controller to change state
 	if(mctr.B > 0){
 		mctr.B = 0;
 		estado = 0;
+		gType = 0;
 	}
 }
 
 void colorbars(){
 	if (txtcolorbmp == NULL){
 		// This only 
-		SDL_Surface *colorb = NULL;
-		///////////////////////////////////////
-		colorb = SDL_LoadBMP("D:\\color.bmp");
-		if (colorb == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(358);
-		}
-		///////////////////////////////////////
-		/* Create textures from the image */
-		txtcolorbmp = SDL_CreateTextureFromSurface(renderer, colorb);
-		if (txtcolorbmp == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
-			SDL_FreeSurface(colorb);
-			printSDLErrorAndReboot(366);
-		}
-		SDL_FreeSurface(colorb);
+		txtcolorbmp = loadTexture("D:\\color.bmp",'b',386);
 	}
-	
 	SDL_RenderCopy(renderer, txtcolorbmp, NULL, NULL);
 	///////////////////////////
 	///////////////////////////
@@ -552,16 +562,16 @@ void dropshadow(){
 	SDL_Texture	*txtbg = NULL;
 	short ndeltaX = 0, ndeltaY = 0;
 	if (txtmotokobmp == NULL){
-		txtmotokobmp = loadTexture("D:\\motoko.bmp",513);
+		txtmotokobmp = loadTexture("D:\\motoko.bmp",'b',513);
 	}
 	if (txtcheckposbmp == NULL){
-		txtcheckposbmp = loadTexture("D:\\checkpos.bmp",516);
+		txtcheckposbmp = loadTexture("D:\\checkpos.bmp",'b',516);
 	}
 	if (txtstripesposbmp == NULL){
-		txtstripesposbmp = loadTexture("D:\\stripespos.bmp",520);
+		txtstripesposbmp = loadTexture("D:\\stripespos.bmp",'b',520);
 	}
 	if (txtshadowbmp == NULL){
-		txtshadowbmp = loadTextureA("D:\\shadow.bmp",255,0,255,524);
+		txtshadowbmp = loadTextureA("D:\\shadow.bmp",'b',255,0,255,524);
 	}
 	
 	///////////////////////////
@@ -640,16 +650,16 @@ void stripedsprite(){
 	SDL_Texture	*txtbg = NULL;
 	short ndeltaX = 0, ndeltaY = 0;
 	if (txtmotokobmp == NULL){
-		txtmotokobmp = loadTexture("D:\\motoko.bmp",513);
+		txtmotokobmp = loadTexture("D:\\motoko.bmp",'b',513);
 	}
 	if (txtcheckposbmp == NULL){
-		txtcheckposbmp = loadTexture("D:\\checkpos.bmp",516);
+		txtcheckposbmp = loadTexture("D:\\checkpos.bmp",'b',516);
 	}
 	if (txtstripesposbmp == NULL){
-		txtstripesposbmp = loadTexture("D:\\stripespos.bmp",520);
+		txtstripesposbmp = loadTexture("D:\\stripespos.bmp",'b',520);
 	}
 	if (txtstripedbmp == NULL){
-		txtstripedbmp = loadTextureA("D:\\striped.bmp",255,0,255,524);
+		txtstripedbmp = loadTextureA("D:\\striped.bmp",'b',255,0,255,524);
 	}
 	
 	///////////////////////////
@@ -740,10 +750,10 @@ void manuallag(){
 	
 	
 	if (txtlagperbmp == NULL){
-		txtlagperbmp = loadTextureA("D:\\lag-per.bmp",0,0,0,705);
+		txtlagperbmp = loadTextureA("D:\\lag-per.bmp",'b',0,0,0,705);
 	}
 	if (txtlagfullbmp == NULL){
-		txtlagfullbmp = loadTexture("D:\\lag-full.bmp",708);
+		txtlagfullbmp = loadTexture("D:\\lag-full.bmp",'b',708);
 	}
 	///////////////////////////
 	///////////////////////////
@@ -799,7 +809,7 @@ void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g,
 	SDL_Rect destrect;
 	int w, h;
 	SDL_Surface		*txtsf;
-	SDL_Color color={r,g,b};
+	SDL_Color color={r,g,b,SDL_ALPHA_OPAQUE}; // or maybe SDL_ALPHA_TRANSPARENT
 	txtsf = TTF_RenderText_Solid(font,text,color);
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, txtsf);
 	SDL_FreeSurface(txtsf);
@@ -812,12 +822,19 @@ void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g,
 	SDL_DestroyTexture(texture);
 }
 
-SDL_Texture* loadTexture(const char * text, int linecode){
+SDL_Texture* loadTexture(const char * text, unsigned char type, int linecode){
 	SDL_Texture *txt = NULL;
 	// This only 
 	SDL_Surface *sfbmp = NULL;
 	///////////////////////////////////////
-	sfbmp = SDL_LoadBMP(text);
+	switch(type){
+		case 'b':
+		sfbmp = SDL_LoadBMP(text);
+		break;
+		case 'p':
+		sfbmp = IMG_Load(text);
+		break;
+	}
 	if (sfbmp == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
 		printSDLErrorAndReboot(linecode);
@@ -834,12 +851,21 @@ SDL_Texture* loadTexture(const char * text, int linecode){
 	return txt;
 }
 
-SDL_Texture* loadTextureA(const char * text, unsigned char r,unsigned char g, unsigned char b, int linecode){
+SDL_Texture* loadTextureA(const char * text,unsigned char type, unsigned char r,unsigned char g, unsigned char b, int linecode){
 	SDL_Texture *txt = NULL;
 	// This only 
 	SDL_Surface *sfbmp = NULL;
 	///////////////////////////////////////
-	sfbmp = SDL_LoadBMP(text);
+	switch(type){
+		case 'b':
+		sfbmp = SDL_LoadBMP(text);
+		break;
+		case 'p':
+		sfbmp = IMG_Load(text);
+		break;
+	}
+	
+	
 	if (sfbmp == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
 		printSDLErrorAndReboot(linecode);
