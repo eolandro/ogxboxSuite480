@@ -47,12 +47,24 @@ int estado = 0;
 // states
 void init();				 // estado 0
 void grid();				 // estado 1
-void colorbars();			 // estado 2
-void draw601colorbars();	 // estado 3
+void colorbars100();		 // estado 2
+void colorbars075();		 // estado 3
 void drawlinearity();		 // estado 4
 void dropshadow();			 // estado 5
 void stripedsprite();		 // estado 6
 void manuallag();			 // estado 7
+
+// Load textures states
+void loadTXTgrid();			 // estado 101
+void loadTXTcolorbars100();	 // estado 102
+void loadTXTcolorbars075();	 // estado 103
+
+// unLoad textures states	 
+void unloadTXTgrid();		 	 // estado 201
+void unloadTXTcolorbars100();	 // estado 202
+void unloadTXTcolorbars075();	 // estado 203
+
+
 // general
 static void printSDLErrorAndReboot();
 void go2XYprint(int x, int y, const char * text,unsigned char r,unsigned char g, unsigned char b);
@@ -73,10 +85,15 @@ SDL_Texture		*txtitlebmp = NULL;
 // for grid		
 SDL_Texture		*txtgridFRGBbmp = NULL;
 SDL_Texture		*txtgridLRGBbmp = NULL;
-// for colorbars	
-SDL_Texture		*txtcolorbmp = NULL;
-// for colorbars grey	
-SDL_Texture		*txt601701cbbmp = NULL;
+SDL_Texture		*txtnrigLRGBbmp = NULL;
+// for colorbars 100	
+SDL_Texture		*txtcolor100bmp = NULL;
+SDL_Texture		*txtcolor101bmp = NULL;
+SDL_Texture		*txtcolor102bmp = NULL;
+// for colorbars 75	
+SDL_Texture		*txtcolor750bmp = NULL;
+SDL_Texture		*txtcolor751bmp = NULL;
+SDL_Texture		*txtcolor752bmp = NULL;
 // for linearity
 SDL_Texture		*txtcirclesbmp = NULL;
 SDL_Texture		*txtcircles_gridbmp = NULL;
@@ -99,8 +116,8 @@ int FontH = 0;
 short slc = 0;
 char Menu[ME][32] = {
 	"Grid Test",
-	"Color Bars",
-	"Color Bars with Gray Scale",
+	"Color Bars 100",
+	"Color Bars  75",
 	"Linearity",
 	"Drop Shadow",
 	"Striped Sprite",
@@ -215,18 +232,45 @@ int main(void){
 	while (estado != 99){
 		/////////////////////////////////////////////
 		switch(estado){
+			////////////////////////
 			case 0:
 				init();
+			break;
+			//////////////////////
+			/// GRID
+			case 101:
+				loadTXTgrid();
 			break;
 			case 1:
 				grid();
 			break;
+			case 201:
+				unloadTXTgrid();
+			break;
+			//////////////////////
+			// Color bars 100
+			case 102:
+				loadTXTcolorbars100();
+			break;
 			case 2:
-				colorbars();
+				colorbars100();
+			break;
+			case 202:
+				unloadTXTcolorbars100();
+			break;
+			/////////////////////
+			//////////////////////
+			// Color bars 75
+			case 103:
+				loadTXTcolorbars075();
 			break;
 			case 3:
-				draw601colorbars();
+				colorbars075();
 			break;
+			case 203:
+				unloadTXTcolorbars075();
+			break;
+			/////////////////////
 			case 4:
 				drawlinearity();
 			break;
@@ -281,18 +325,6 @@ int main(void){
 	
 	if (txtitlebmp != NULL){
 		SDL_DestroyTexture(txtitlebmp);
-	}
-	if (txtgridLRGBbmp != NULL){
-		SDL_DestroyTexture(txtgridLRGBbmp);
-	}
-	if (txtgridFRGBbmp != NULL){
-		SDL_DestroyTexture(txtgridFRGBbmp);
-	}
-	if (txtcolorbmp != NULL){
-		SDL_DestroyTexture(txtcolorbmp);
-	}
-	if (txt601701cbbmp != NULL){
-		SDL_DestroyTexture(txt601701cbbmp);
 	}
 	if (txtcirclesbmp != NULL){
 		SDL_DestroyTexture(txtcirclesbmp);
@@ -368,31 +400,34 @@ void init(){
 	// gamepad controller to change state
 	if(mctr.A > 0){
 		mctr.A = 0;
-		estado = slc + 1;
+		estado = slc + 1 + 100;
 	}
 }
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 void grid(){
 	SDL_Texture	*txtbg = NULL;
 	SDL_Rect rpos = {0,0,W,H};
-	if (txtgridFRGBbmp == NULL){
-		txtgridFRGBbmp = loadTexture("D:\\gridfullrgb.bmp",'b',377);
-	}
-	if (txtgridLRGBbmp == NULL){
-		txtgridLRGBbmp = loadTexture("D:\\gridlimitedrgb.bmp",'b',380);
-	}
 	///////////////////////////
 	// gamepad controller in this state
 	if(mctr.Y > 0){
 		mctr.Y = 0;
-		gType = gType < 1? gType + 1 : 0 ;
+		gType = gType < 2? gType + 1 : 0 ;
 	}
 	////////////////////////////////////
 	// Textures
-	if(gType == 0){
-		txtbg = txtgridLRGBbmp;
-	}else{
-		txtbg = txtgridFRGBbmp;
+	switch(gType){
+		case 0:
+			txtbg = txtnrigLRGBbmp;
+		break;
+		case 1:
+			txtbg = txtgridLRGBbmp;
+		break;
+		case 2:
+			txtbg = txtgridFRGBbmp;
+		break;
 	}
 	/////////////////////////////////////
 	SDL_RenderCopy(renderer, txtbg, NULL, &rpos);
@@ -401,17 +436,65 @@ void grid(){
 	// gamepad controller to change state
 	if(mctr.B > 0){
 		mctr.B = 0;
-		estado = 0;
+		estado = 201;
 		gType = 0;
 	}
 }
 
-void colorbars(){
-	if (txtcolorbmp == NULL){
-		// This only 
-		txtcolorbmp = loadTexture("D:\\color.bmp",'b',386);
+void loadTXTgrid(){
+	if (txtgridFRGBbmp == NULL){
+		txtgridFRGBbmp = loadTexture("D:\\gridfullrgb.bmp",'b',377);
 	}
-	SDL_RenderCopy(renderer, txtcolorbmp, NULL, NULL);
+	if (txtgridLRGBbmp == NULL){
+		txtgridLRGBbmp = loadTexture("D:\\gridlimitedrgb.bmp",'b',380);
+	}
+	if (txtnrigLRGBbmp == NULL){
+		txtnrigLRGBbmp = loadTexture("D:\\nrig.bmp",'b',380);
+	}
+	estado = 1; // enter
+}
+
+void unloadTXTgrid(){
+	if (txtgridLRGBbmp != NULL){
+		SDL_DestroyTexture(txtgridLRGBbmp);
+	}
+	if (txtgridFRGBbmp != NULL){
+		SDL_DestroyTexture(txtgridFRGBbmp);
+	}
+	if (txtnrigLRGBbmp != NULL){
+		SDL_DestroyTexture(txtnrigLRGBbmp);
+	}
+	estado = 0; // enter
+}
+
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+void colorbars100(){
+	SDL_Texture	*txtbg = NULL;
+	SDL_Rect rpos = {0,0,W,H};
+	///////////////////////////
+	// gamepad controller in this state
+	if(mctr.Y > 0){
+		mctr.Y = 0;
+		gType = gType < 2? gType + 1 : 0 ;
+	}
+	////////////////////////////////////
+	// Textures
+	switch(gType){
+		case 0:
+			txtbg = txtcolor100bmp;
+		break;
+		case 1:
+			txtbg = txtcolor101bmp;
+		break;
+		case 2:
+			txtbg = txtcolor102bmp;
+		break;
+	}
+	/////////////////////////////////////
+	SDL_RenderCopy(renderer, txtbg, NULL, &rpos);
 	///////////////////////////
 	///////////////////////////
 	// gamepad controller in this state
@@ -421,44 +504,105 @@ void colorbars(){
 	// gamepad controller to change state
 	if(mctr.B > 0){
 		mctr.B = 0;
-		estado = 0;
+		estado = 202;
+		gType = 0;
+	}
+}
+void loadTXTcolorbars100(){
+	if (txtcolor100bmp == NULL){
+		txtcolor100bmp = loadTexture("D:\\color100.bmp",'b',386);
+	}
+	if (txtcolor101bmp == NULL){
+		txtcolor101bmp = loadTexture("D:\\color101.bmp",'b',386);
+	}
+	if (txtcolor102bmp == NULL){
+		txtcolor102bmp = loadTexture("D:\\color102.bmp",'b',386);
+	}
+	estado = 2; // enter
+}
+
+void unloadTXTcolorbars100(){
+	if (txtcolor100bmp != NULL){
+		SDL_DestroyTexture(txtcolor100bmp);
+	}
+	if (txtcolor101bmp != NULL){
+		SDL_DestroyTexture(txtcolor101bmp);
+	}
+	if (txtcolor102bmp != NULL){
+		SDL_DestroyTexture(txtcolor102bmp);
+	}
+	estado = 0; // enter
+}
+
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+
+void colorbars075(){
+	SDL_Texture	*txtbg = NULL;
+	SDL_Rect rpos = {0,0,W,H};
+	///////////////////////////
+	// gamepad controller in this state
+	if(mctr.Y > 0){
+		mctr.Y = 0;
+		gType = gType < 2? gType + 1 : 0 ;
+	}
+	////////////////////////////////////
+	// Textures
+	switch(gType){
+		case 0:
+			txtbg = txtcolor750bmp;
+		break;
+		case 1:
+			txtbg = txtcolor751bmp;
+		break;
+		case 2:
+			txtbg = txtcolor752bmp;
+		break;
+	}
+	/////////////////////////////////////
+	SDL_RenderCopy(renderer, txtbg, NULL, &rpos);
+	///////////////////////////
+	///////////////////////////
+	// gamepad controller in this state
+	
+	////////////////////////
+	SDL_RenderPresent(renderer);
+	// gamepad controller to change state
+	if(mctr.B > 0){
+		mctr.B = 0;
+		estado = 203;
+		gType = 0;
 	}
 }
 
-void draw601colorbars(){
-	if (txt601701cbbmp == NULL){
-		// This only 
-		SDL_Surface *d601color = NULL;
-		///////////////////////////////////////
-		d601color = SDL_LoadBMP("D:\\601701cb.bmp");
-		if (d601color == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load texture.\n");
-			printSDLErrorAndReboot(393);
-		}
-		///////////////////////////////////////
-		/* Create textures from the image */
-		txt601701cbbmp = SDL_CreateTextureFromSurface(renderer, d601color);
-		if (txt601701cbbmp == NULL) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load Surface.\n");
-			SDL_FreeSurface(d601color);
-			printSDLErrorAndReboot(401);
-		}
-		SDL_FreeSurface(d601color);
+void loadTXTcolorbars075(){
+	if (txtcolor750bmp == NULL){
+		txtcolor750bmp = loadTexture("D:\\color75.bmp",'b',386);
 	}
-	
-	SDL_RenderCopy(renderer, txt601701cbbmp, NULL, NULL);
-	///////////////////////////
-	///////////////////////////
-	// gamepad controller in this state
-	
-	////////////////////////
-	SDL_RenderPresent(renderer);
-	// gamepad controller to change state
-	if(mctr.B > 0){
-		mctr.B = 0;
-		estado = 0;
+	if (txtcolor751bmp == NULL){
+		txtcolor751bmp = loadTexture("D:\\color751.bmp",'b',386);
 	}
+	if (txtcolor752bmp == NULL){
+		txtcolor752bmp = loadTexture("D:\\color752.bmp",'b',386);
+	}
+	estado = 3; // enter
 }
+
+void unloadTXTcolorbars075(){
+	if (txtcolor750bmp != NULL){
+		SDL_DestroyTexture(txtcolor750bmp);
+	}
+	if (txtcolor751bmp != NULL){
+		SDL_DestroyTexture(txtcolor751bmp);
+	}
+	if (txtcolor752bmp != NULL){
+		SDL_DestroyTexture(txtcolor752bmp);
+	}
+	estado = 0; // enter
+}
+
 
 void drawlinearity(){
 	//Render clear

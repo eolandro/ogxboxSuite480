@@ -12,6 +12,11 @@ $(GEN_XISO): $(OUTPUT_DIR)/title.bmp
 $(OUTPUT_DIR)/title.bmp: $(CURDIR)/title.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
+TARGET += $(OUTPUT_DIR)/nrig.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/nrig.bmp
+$(OUTPUT_DIR)/nrig.bmp: $(CURDIR)/nrig.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
 TARGET += $(OUTPUT_DIR)/gridfullrgb.bmp
 $(GEN_XISO): $(OUTPUT_DIR)/gridfullrgb.bmp
 $(OUTPUT_DIR)/gridfullrgb.bmp: $(CURDIR)/gridfullrgb.bmp $(OUTPUT_DIR)
@@ -22,14 +27,34 @@ $(GEN_XISO): $(OUTPUT_DIR)/gridlimitedrgb.bmp
 $(OUTPUT_DIR)/gridlimitedrgb.bmp: $(CURDIR)/gridlimitedrgb.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
-TARGET += $(OUTPUT_DIR)/color.bmp
-$(GEN_XISO): $(OUTPUT_DIR)/color.bmp
-$(OUTPUT_DIR)/color.bmp: $(CURDIR)/color.bmp $(OUTPUT_DIR)
+TARGET += $(OUTPUT_DIR)/color100.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/color100.bmp
+$(OUTPUT_DIR)/color100.bmp: $(CURDIR)/color100.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
-TARGET += $(OUTPUT_DIR)/601701cb.bmp
-$(GEN_XISO): $(OUTPUT_DIR)/601701cb.bmp
-$(OUTPUT_DIR)/601701cb.bmp: $(CURDIR)/601701cb.bmp $(OUTPUT_DIR)
+TARGET += $(OUTPUT_DIR)/color101.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/color101.bmp
+$(OUTPUT_DIR)/color101.bmp: $(CURDIR)/color101.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/color102.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/color102.bmp
+$(OUTPUT_DIR)/color102.bmp: $(CURDIR)/color102.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/color75.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/color75.bmp
+$(OUTPUT_DIR)/color75.bmp: $(CURDIR)/color75.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/color751.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/color751.bmp
+$(OUTPUT_DIR)/color751.bmp: $(CURDIR)/color751.bmp $(OUTPUT_DIR)
+	$(VE)cp '$<' '$@'
+	
+TARGET += $(OUTPUT_DIR)/color752.bmp
+$(GEN_XISO): $(OUTPUT_DIR)/color752.bmp
+$(OUTPUT_DIR)/color752.bmp: $(CURDIR)/color752.bmp $(OUTPUT_DIR)
 	$(VE)cp '$<' '$@'
 	
 TARGET += $(OUTPUT_DIR)/circles.bmp
